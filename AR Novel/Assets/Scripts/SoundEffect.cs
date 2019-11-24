@@ -14,7 +14,7 @@ public class SoundEffect : MonoBehaviour {
     void Start()
     {
         // change this to slider in the main menu
-        AudioSource.volume = PlayerPrefsManager.GetSoundEffectVolume();
+        //AudioSource.volume = PlayerPrefsManager.GetSoundEffectVolume();
     }
 
     // Method that runs when level is loaded
@@ -33,6 +33,10 @@ public class SoundEffect : MonoBehaviour {
                 AudioSource.Play();
             }
         }
+    }
+
+    public void StopAudioClip(){
+        AudioSource.Stop();
     }
     
     public void SetVolume(float volume){

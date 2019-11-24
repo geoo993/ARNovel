@@ -39,6 +39,11 @@ public class OpenHyperlinks : MonoBehaviour, IPointerClickHandler {
         int linkIndex = isHoveringOver ? TMP_TextUtilities.FindIntersectingLink(pTextMeshPro, Input.mousePosition, pCamera)
             : -1;
 
+        if (isHoveringOver) {
+            //Debug.Log("We are hovering over the text");
+
+        }
+
         // Clear previous link selection if one existed.
         if( pCurrentLink != -1 && linkIndex != pCurrentLink ) {
             // Debug.Log("Clear old selection");
@@ -59,12 +64,14 @@ public class OpenHyperlinks : MonoBehaviour, IPointerClickHandler {
     }
 
     public void OnPointerClick(PointerEventData eventData) {
-        // Debug.Log("Click at POS: " + eventData.position + "  World POS: " + eventData.worldPosition);
+        Debug.Log("Click at POS: " + eventData.position + "  World POS: " + eventData.worldPosition);
 
         int linkIndex = TMP_TextUtilities.FindIntersectingLink(pTextMeshPro, Input.mousePosition, pCamera);
-        if( linkIndex != -1 ) { // was a link clicked?
+        if( linkIndex != -1 ) { 
+            Debug.Log("We Clicked on Link");// was a link clicked?
             TMP_LinkInfo linkInfo = pTextMeshPro.textInfo.linkInfo[linkIndex];
 
+            Debug.Log("This is the link that was clicked "+ linkInfo.GetLinkID()+"  : "+linkInfo.GetLinkText());
             // Debug.Log(string.Format("id: {0}, text: {1}", linkInfo.GetLinkID(), linkInfo.GetLinkText()));
             // open the link id as a url, which is the metadata we added in the text field
             Application.OpenURL(linkInfo.GetLinkID());

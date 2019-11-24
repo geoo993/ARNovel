@@ -9,52 +9,97 @@ using UnityEngine.SceneManagement;
 using System.Net;
 using Vuforia;
 
+// https://www.youtube.com/watch?v=R6Iaa6lvGwY
 public class UIManager : MonoBehaviour
 {
+    
+    // Right Panel
+    private GameObject rightPanel;
+    
+    // Left panel
+    private GameObject leftPanel;
+
     // Info panel
     private GameObject infoButton;
     private GameObject infoPanel;
     private GameObject infoText;
     private bool isInfoSelected;
+
+    // Title
+    private GameObject titleText;
+    private GameObject subtitleText;
     
     // Scale
     private GameObject scaleButton;
-    private bool isScaleSelected;
-
-    // Spin
-    private GameObject spinButton;
-    private bool isSpinSelected;
+    private bool isScaleSelected = true;
 
     // Rotate
     private GameObject rotateButton;
-    private bool isRotateSelected;
+    private bool isRotateSelected = true;
+
+    // Info Sound Button
+    private GameObject introSoundButton;
+    private bool isIntroSoundSelected;
     
     // Sound Button
     private GameObject musicManager;
     private GameObject soundButton;
     private bool isSoundSelected;
 
+    // Target Tracker
+    public static TargetTracker target;
+    private TrackableBehaviour currentBehaviour;
 
     void Awake()
     {
+        Debug.Log ("DEBUG LOG: STARTING DEMO\n");
+        Console.Write ("CONSOLE WRITE: STARTING DEMO\n");
         musicManager = GameObject.FindGameObjectWithTag("MusicManager");
         scaleButton = GameObject.FindGameObjectWithTag("ScaleButton");
         rotateButton = GameObject.FindGameObjectWithTag("RotateButton");
-        spinButton = GameObject.FindGameObjectWithTag("SpinButton");
         soundButton = GameObject.FindGameObjectWithTag("SoundButton");
+        introSoundButton = GameObject.FindGameObjectWithTag("IntroSoundButton");
         infoButton = GameObject.FindGameObjectWithTag("InfoButton");
         infoPanel = GameObject.FindGameObjectWithTag("InfoPanel");
+        infoText = GameObject.FindGameObjectWithTag("InfoText");
+        rightPanel = GameObject.FindGameObjectWithTag("RightPanel");
+        leftPanel = GameObject.FindGameObjectWithTag("LeftPanel");
+        titleText = GameObject.FindGameObjectWithTag("TitleText");
+        subtitleText  = GameObject.FindGameObjectWithTag("SubTitleText");
     }
 
     void Start()
     {
-
+        ShowInfo(isInfoSelected);
+        EnableRotation(isRotateSelected);
+        EnableScaling(isScaleSelected);
     }
 
     // Update is called once per frame
-    void Update()
-    {
-        
+    void Update() {
+
+        if (target) {
+            switch (target.ARNovelMode) {
+                case TargetTracker.Level.LevelOne:
+                    SetTitle("Part One", "Big Vegas");
+                    break;
+                case TargetTracker.Level.LevelTwo:
+                    SetTitle("Part Two", "Rocket");
+                    break;
+                case TargetTracker.Level.LevelThree:
+                    SetTitle("Part Three", "Spacecraft");
+                    break;
+                default: 
+                    SetTitle("AR Novel", "Dark Nebula");
+                break;
+            }
+
+        }
+    }
+
+    private void SetTitle(string title, string subtitle) {
+        if (titleText != null) titleText.GetComponent<Text>().text = title;
+        if (subtitleText != null) subtitleText.GetComponent<Text>().text = subtitle;
     }
 
     public void Rotate()
@@ -65,18 +110,10 @@ public class UIManager : MonoBehaviour
     }
 
     private void EnableRotation(bool enabled) {
-
-    }
-
-    public void Spin()
-    {
-        isSpinSelected = !isSpinSelected;
-        if (spinButton != null) ChangeColor(spinButton, isSpinSelected, true);
-        EnableSpinning(isSpinSelected);
-    }
-
-    private void EnableSpinning(bool enabled) {
-
+        foreach (TouchRotateObject touchRotate in FindObjectsOfType<TouchRotateObject>())
+        {
+            touchRotate.isEnabled = enabled;
+        }
     }
 
     public void Scale()
@@ -87,7 +124,10 @@ public class UIManager : MonoBehaviour
     }
 
     private void EnableScaling(bool enabled) {
-        
+        foreach (TouchScaleObject touchScale in FindObjectsOfType<TouchScaleObject>())
+        {
+            touchScale.isEnabled = enabled;
+        }
     }
 
     public void Info()
@@ -98,18 +138,41 @@ public class UIManager : MonoBehaviour
     }
 
     private void ShowInfo(bool show) {
-        
+        if (infoPanel != null) infoPanel.SetActive(infoButton != null && show);
     }
 
-    public void PlaySound()
-    {
-        MuteSound();
+    private void SetInfo() {
+        
+        if (infoText) {
+            TMPro.TextMeshProUGUI textMesh = infoText.GetComponent<TMPro.TextMeshProUGUI>();
+            //textMesh.text = SpaceXRocketModel.RocketParts[SpaceXRocketPart.currentSelected.gameObject.name];
+        }
     }
 
     public void MuteSound() {
-        isSoundSelected = !isSoundSelected;
-        if (soundButton != null) ChangeColor(soundButton, isSoundSelected, true);
-        if (musicManager != null) musicManager.GetComponent<MusicManager>().MuteVolume(isSoundSelected);
+        if (!isIntroSoundSelected) {
+            isSoundSelected = !isSoundSelected;
+            if (soundButton != null) ChangeColor(soundButton, isSoundSelected, true);
+            if (musicManager != null) musicManager.GetComponent<MusicManager>().MuteVolume(isSoundSelected);
+        }
+    }
+
+    public void PlayIntro() {
+        isIntroSoundSelected = !isIntroSoundSelected;
+        if (introSoundButton != null) ChangeColor(introSoundButton, isIntroSoundSelected, true);
+        PlayIntroSound(isIntroSoundSelected);
+    }
+
+    private void PlayIntroSound(bool selected) {
+        if (selected) {
+            if (musicManager != null) musicManager.GetComponent<MusicManager>().MuteVolume(true);
+            PlaySoundClip("intro");
+        } else {
+            if (!isSoundSelected) {
+                if (musicManager != null) musicManager.GetComponent<MusicManager>().MuteVolume(false);
+                StopSoundClip();
+            }
+        }
     }
 
     protected void ChangeColor(GameObject button, bool selected, bool playClip = false) {
@@ -125,11 +188,21 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    protected void PlaySoundClip(string clip) {
+    private void PlaySoundClip(string clip) {
         SoundEffect soundEffect = GetComponent<SoundEffect>();
         if (soundEffect != null)
         {
             soundEffect.PlayAudioClip(clip, false);
+        } else {
+            Console.Write("We do not have a SoundEffect object");
+        }
+    }
+
+     private void StopSoundClip() {
+        SoundEffect soundEffect = GetComponent<SoundEffect>();
+        if (soundEffect != null)
+        {
+            soundEffect.StopAudioClip();
         } else {
             Console.Write("We do not have a SoundEffect object");
         }
